@@ -11,6 +11,7 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 export PATH="$PATH:$(go env GOPATH)/bin"
 ```
+5. [Postman](https://www.postman.com/downloads/) or [grpCurl](https://github.com/fullstorydev/grpcurl/releases) to test the server
 
 ### How to run
 1. Initiate the module
@@ -23,4 +24,17 @@ go mod tidy
 rm -r pb
 mkdir -p pb
 protoc --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt=paths=source_relative ./logevnt.proto
+```
+
+### Run Server
+```bash
+go run ./server/main.go
+```
+
+#### Test server with gRPCurl
+```bash
+grpcurl --plaintext localhost:9292 list LogEvent
+grpcurl --plaintext localhost:9292 describe LogEvent.Start
+
+grpcurl --plaintext -d @ localhost:9292 LogEvent.Start <  ./examples/start_event_req.json
 ```
