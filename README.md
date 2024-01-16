@@ -21,8 +21,7 @@ go mod tidy
 ```
 2. Generate gRPC stubs
 ```bash
-rm -r pb
-mkdir -p pb
+rm -r pb && mkdir pb
 protoc --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt=paths=source_relative ./logevnt.proto
 ```
 
@@ -31,7 +30,11 @@ protoc --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt
 go run ./server/main.go
 ```
 
-#### Test server with gRPCurl
+### Test server
+#### With Go test
+`go test -v ./...`
+
+#### with gRPCurl
 ```bash
 grpcurl --plaintext localhost:9292 list LogEvent
 grpcurl --plaintext localhost:9292 describe LogEvent.Start
