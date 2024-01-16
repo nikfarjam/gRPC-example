@@ -6,6 +6,15 @@ option go_package = "logevnt/pb";
 
 message StartEventRequest {
     string  guid = 1;
+    string  name = 2;
+}
+
+message StartEventResponse {
+    string  guid = 1;
+}
+
+message LogEventRequest {
+    string  guid = 1;
     string  ip = 2;
     google.protobuf.Timestamp time = 3;
     string  method = 4;
@@ -15,7 +24,7 @@ message StartEventRequest {
     string  full_log = 8;
 }
 
-message StartEventResponse {
+message LogEventResponse {
     string  guid = 1;
 }
 
@@ -25,9 +34,14 @@ message EndEventRequest {
 
 message EndEventResponse {
     string  guid = 1;
+    string  name = 2;
+    int64 num_unique_ip = 3;
+    repeated string top_client_ips = 4;
+    repeated string top_visited_urls = 5;
 }
 
 service LogEvent {
     rpc Start (StartEventRequest) returns (StartEventResponse) {}
+    rpc Event (stream LogEventRequest) returns (LogEventResponse) {}
     rpc End (EndEventRequest) returns (EndEventResponse) {}
 }

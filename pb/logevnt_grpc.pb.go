@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LogEventClient interface {
 	Start(ctx context.Context, in *StartEventRequest, opts ...grpc.CallOption) (*StartEventResponse, error)
+	Event(ctx context.Context, opts ...grpc.CallOption) (LogEvent_EventClient, error)
 	End(ctx context.Context, in *EndEventRequest, opts ...grpc.CallOption) (*EndEventResponse, error)
 }
 
@@ -43,6 +44,40 @@ func (c *logEventClient) Start(ctx context.Context, in *StartEventRequest, opts 
 	return out, nil
 }
 
+func (c *logEventClient) Event(ctx context.Context, opts ...grpc.CallOption) (LogEvent_EventClient, error) {
+	stream, err := c.cc.NewStream(ctx, &LogEvent_ServiceDesc.Streams[0], "/LogEvent/Event", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &logEventEventClient{stream}
+	return x, nil
+}
+
+type LogEvent_EventClient interface {
+	Send(*LogEventRequest) error
+	CloseAndRecv() (*LogEventResponse, error)
+	grpc.ClientStream
+}
+
+type logEventEventClient struct {
+	grpc.ClientStream
+}
+
+func (x *logEventEventClient) Send(m *LogEventRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *logEventEventClient) CloseAndRecv() (*LogEventResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(LogEventResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *logEventClient) End(ctx context.Context, in *EndEventRequest, opts ...grpc.CallOption) (*EndEventResponse, error) {
 	out := new(EndEventResponse)
 	err := c.cc.Invoke(ctx, "/LogEvent/End", in, out, opts...)
@@ -57,6 +92,7 @@ func (c *logEventClient) End(ctx context.Context, in *EndEventRequest, opts ...g
 // for forward compatibility
 type LogEventServer interface {
 	Start(context.Context, *StartEventRequest) (*StartEventResponse, error)
+	Event(LogEvent_EventServer) error
 	End(context.Context, *EndEventRequest) (*EndEventResponse, error)
 	mustEmbedUnimplementedLogEventServer()
 }
@@ -67,6 +103,9 @@ type UnimplementedLogEventServer struct {
 
 func (UnimplementedLogEventServer) Start(context.Context, *StartEventRequest) (*StartEventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Start not implemented")
+}
+func (UnimplementedLogEventServer) Event(LogEvent_EventServer) error {
+	return status.Errorf(codes.Unimplemented, "method Event not implemented")
 }
 func (UnimplementedLogEventServer) End(context.Context, *EndEventRequest) (*EndEventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method End not implemented")
@@ -100,6 +139,32 @@ func _LogEvent_Start_Handler(srv interface{}, ctx context.Context, dec func(inte
 		return srv.(LogEventServer).Start(ctx, req.(*StartEventRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _LogEvent_Event_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(LogEventServer).Event(&logEventEventServer{stream})
+}
+
+type LogEvent_EventServer interface {
+	SendAndClose(*LogEventResponse) error
+	Recv() (*LogEventRequest, error)
+	grpc.ServerStream
+}
+
+type logEventEventServer struct {
+	grpc.ServerStream
+}
+
+func (x *logEventEventServer) SendAndClose(m *LogEventResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *logEventEventServer) Recv() (*LogEventRequest, error) {
+	m := new(LogEventRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func _LogEvent_End_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -136,6 +201,12 @@ var LogEvent_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _LogEvent_End_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Event",
+			Handler:       _LogEvent_Event_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "logevnt.proto",
 }

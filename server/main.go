@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
+	"errors"
+	"io"
 	"log"
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 
 	"github.com/nikfarjam/gRPC-example/pb"
 )
@@ -31,7 +35,7 @@ func main() {
 }
 
 func (evt *Event) Start(ctx context.Context, req *pb.StartEventRequest) (*pb.StartEventResponse, error) {
-	log.Printf("Info: New start request")
+	log.Printf("Info: Hand shake with new client [%v]", req.Name)
 	// TODO: Validate req
 	resp := pb.StartEventResponse{
 		Guid: req.Guid,
@@ -41,8 +45,30 @@ func (evt *Event) Start(ctx context.Context, req *pb.StartEventRequest) (*pb.Sta
 	return &resp, nil
 }
 
+func (evt *Event) Event(stream pb.LogEvent_EventServer) error {
+	guid := ""
+	for {
+		req, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "Can not read the stream")
+		}
+		log.Printf("Info: New event from client [%v]", req.Guid)
+		log.Printf("Debug: New event from client [%v]", req)
+		guid = req.Guid
+	}
+
+	resp := pb.LogEventResponse{
+		Guid: guid,
+	}
+
+	return stream.SendAndClose(&resp)
+}
+
 func (evt *Event) End(ctx context.Context, req *pb.EndEventRequest) (*pb.EndEventResponse, error) {
-	log.Printf("Info: End request")
+	log.Printf("Info: End with client [%v]", req.Guid)
 
 	resp := pb.EndEventResponse{
 		Guid: req.Guid,
