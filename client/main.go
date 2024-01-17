@@ -12,14 +12,16 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nikfarjam/gRPC-example/pb"
 )
 
-var IPS = [...]string{"127.0.0.1", "10.0.0.12", "8.8.8.8", "10.0.1.20"}
-var URLS = [...]string{"/home/", "/faq/", "/login", "/404"}
+var URLS = [...]string{"/home/", "/faq/", "/login", "/404", "/asset.js", "/main.css", "/intranet-analytics/", "index.html"}
 var METHODS = [...]string{"GET", "POST"}
+
+const TOKEN = "log_server_token"
 
 func main() {
 	var name string
@@ -39,6 +41,7 @@ func main() {
 	creds := insecure.NewCredentials()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx = metadata.AppendToOutgoingContext(ctx, TOKEN, os.Getenv(TOKEN))
 	defer cancel()
 	conn, err := grpc.DialContext(
 		ctx,
@@ -61,6 +64,7 @@ func main() {
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	ctx = metadata.AppendToOutgoingContext(ctx, TOKEN, os.Getenv(TOKEN))
 	defer cancel()
 
 	resp, err := c.Start(ctx, &req)
@@ -70,6 +74,7 @@ func main() {
 	fmt.Println(resp)
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	ctx = metadata.AppendToOutgoingContext(ctx, TOKEN, os.Getenv(TOKEN))
 	defer cancel()
 	stream, err := c.Event(ctx)
 	if err != nil {
@@ -89,35 +94,42 @@ func main() {
 		numMessages = 3
 	}
 
+	var delay int64
+	if len(os.Args) > 3 {
+		delay, _ = strconv.ParseInt(os.Args[3], 10, 64)
+	}
+
 	for i := 0; i < numMessages; i += 1 {
+		time.Sleep(time.Duration(delay) * time.Microsecond)
 		lreq := pb.LogEventRequest{
 			Guid:        guid,
-			Ip:          IPS[r.Intn(len(IPS))],
+			Ip:          fmt.Sprintf("%v.%v.%v.%v", r.Intn(255), r.Intn(255), r.Intn(255), r.Intn(255)),
 			Time:        timestamppb.Now(),
 			Method:      METHODS[r.Intn(len(METHODS))],
 			Path:        URLS[r.Intn(len(URLS))],
 			Status:      r.Int31n(5)*100 + r.Int31n(10)*9,
 			ProcessTime: r.Int63n(800),
-			FullLog:     "Dumb log",
+			FullLog:     fmt.Sprintf("Dumb log %v", i+1),
 		}
 		if err := stream.Send(&lreq); err != nil {
 			log.Fatalf("error: %s", err)
 		}
 	}
-	lresp, err := stream.CloseAndRecv()
+	sresp, err := stream.CloseAndRecv()
 	if err != nil {
 		log.Fatalf("error: %s", err)
 	}
-	fmt.Println(lresp)
+	fmt.Println(sresp)
 
 	ereq := pb.EndEventRequest{
 		Guid: guid,
 	}
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	ctx = metadata.AppendToOutgoingContext(ctx, TOKEN, os.Getenv(TOKEN))
 	defer cancel()
 	eresp, err := c.End(ctx, &ereq)
 	if err != nil {
 		log.Fatalf("Error: %s", err)
 	}
-	fmt.Println(eresp)
+	fmt.Printf("Total result is %+v\n", eresp)
 }
