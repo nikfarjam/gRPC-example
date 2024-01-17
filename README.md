@@ -1,5 +1,9 @@
 # gRPC-example
-An example gRPC streaming server with Go Lang
+An example gRPC streaming server with Go Lang  
+This server has three API  
+1. **Start:** Register a client with a name and unique Guid
+2. **Event:** A stream API which listen to client Log requests that contains visited IP, Path and store them in memory
+3. **End:** Return number of unique IPs, most visited Path and IPs
 
 ### Prerequisites
 1. [Go Compiler](https://go.dev/doc/install)
@@ -27,7 +31,8 @@ protoc --go_out=pb --go_opt=paths=source_relative --go-grpc_out=pb --go-grpc_opt
 
 ### Run Server
 ```bash
-go run ./server/main.go
+export LOG_SERVER_TOKEN=<secret-token>
+go run ./server/
 ```
 
 ### Test server
@@ -39,5 +44,14 @@ go run ./server/main.go
 grpcurl --plaintext localhost:9292 list LogEvent
 grpcurl --plaintext localhost:9292 describe LogEvent.Start
 
-grpcurl --plaintext -d @ localhost:9292 LogEvent.Start <  ./examples/start_event_req.json
+grpcurl --plaintext -d @ localhost:9292 LogEvent.Start <  ./examples/start_req.json
 ```
+
+#### Mock Client
+```bash
+export LOG_SERVER_TOKEN=<secret-token>
+go run ./client/ <name> <number of messages> <delay between each messages>
+// For example 
+// $ go run ./client test-1 100 5
+```
+**Note:** Secret token for both server and client terminal must be the same 
