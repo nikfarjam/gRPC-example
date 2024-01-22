@@ -1,10 +1,7 @@
 {
-    "guid": "cc52a3c9b23ec23349a0310d4770ef000b93b08b",
+    "guid": "428fd17a3c92f1ebac3ac73f1ccaca2f1abfc5b4",
     "ip": "10.0.1.12",
-    "time": {
-        "nanos": -2017140226,
-        "seconds": "70"
-    },
+    "time": "2020-07-30T18:00:00.000Z",
     "method": "Get",
     "path": "/home/",
     "status": 200,
