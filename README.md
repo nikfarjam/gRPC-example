@@ -9,6 +9,8 @@ An example Observability Server in **Go** that listens to applications' logs on 
 2. [**gRPC Client**](./grpc-client)  
 An example **gRPC** client generates mock logs and sends them to the **Log monitoring server**
 
+3. [**RESTful API**](./unit-converter)  
+An RESTful API that converts temperatures between Fahrenheit (°F) and Celsius (°C).
 
 ## License
 
