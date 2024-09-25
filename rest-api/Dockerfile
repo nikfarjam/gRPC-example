@@ -1,7 +1,7 @@
 FROM golang:1.23.1-alpine3.20
 
 COPY main.go go.mod /app/
-COPY info.dcfg /etc/sample-api/
+COPY info.cfg /etc/sample-api/
 WORKDIR /app
 
 RUN go build .
