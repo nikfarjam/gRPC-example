@@ -1,9 +1,8 @@
 FROM golang:1.23.1-alpine3.20
 
-COPY . /app
+COPY main.go go.mod /app/
+COPY info.dcfg /etc/sample-api/
 WORKDIR /app
-RUN mkdir -p /etc/sample-api/ && \
-     echo "version 1.0.0" > /etc/sample-api/info.cfg
 
 RUN go build .
 EXPOSE 8080
